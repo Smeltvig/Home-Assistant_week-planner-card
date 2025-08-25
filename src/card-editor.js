@@ -58,7 +58,8 @@ class MyCustomCardEditor extends LitElement {
         this.config = config;
 
         this._config = Helper.getDefaultConfig(config, this.hass);
-
+        
+        /*
         //let _texts = Object.keys(this._config.texts ?? {}).map((key) => ({ [key]: { 'value': this._config.texts[key], 'enabled': true} }));
 
         //this._config['texts'] = Object.keys(texts).filter((key) =>  { const k = (key.startsWith('show_') ? key : 'show_'+key) ; return ( key.startsWith('show_') ? false : texts[k].value ) });
@@ -112,6 +113,7 @@ class MyCustomCardEditor extends LitElement {
                 ([key, val])=> (!key.startsWith('show_') ? this._texts['show_'+key] : false )
             )
         );
+        */
         /*
         Object.keys(this._texts)
             .filter((key) => !key.startsWith('show_'))
@@ -126,13 +128,13 @@ class MyCustomCardEditor extends LitElement {
                 ([key, val])=> (!key.startsWith('show_') ? this._texts['show_'+key] : false )
             )
         );
-        */
+       
 
         if (Object.keys(this._config['texts'] ?? {}).length == 0){
             if (this._config.hasOwnProperty('texts') ){
                 delete this._config.texts;
             }
-        }
+        } */
         //this._config['texts'] = Object.keys(this._texts).filter((key) =>  { const k = (key.startsWith('show_') ? key : 'show_'+key) ; return ( key.startsWith('show_') ? false : this._texts[k] ) });
         //this._config.texts = Object.keys(this._texts).filter((key) =>  this._texts[key].enabled ?? false ).map((key) => ({ [key]: this._texts[key].value}));
 
@@ -152,11 +154,18 @@ class MyCustomCardEditor extends LitElement {
         if((this._config.calendars ?? []).length == 0){
             this._config['hideNoEvent'] = true
         }
-        this._weather = this._config.weather ?? {};
+        this._weather = Object.assign(
+            {},
+            Helper.getDefaultWeatherConfig(),
+            this._config.weather ?? {}
+        );
+        this._texts = Object.assign(
+            {},
+            Helper.getDefaulTextsConfig(),
+            this._config.texts ?? {}
+        );
 
-
-
-
+        this._config['texts'] = Helper.filterOutDefaultConfig(Helper.getDefaulTextsConfig(), this._texts);
          /*
         const dvdvd = Object.keys(this.hass.states)
             .filter((entityId) =>  entityId.startsWith('calendar.') )
@@ -192,7 +201,6 @@ class MyCustomCardEditor extends LitElement {
 
         
         
-        //this._texts = this._config.texts ?? {};
         //this._config.texts = this._texts;
     }
   
@@ -411,8 +419,8 @@ class MyCustomCardEditor extends LitElement {
         if (!this._config.hasOwnProperty('type')){
             this._config['type'] = "custom:family-week-planner-card";
         }
-
-        let texts = Object.assign({}, this._texts ?? {});
+        let texts = Object.assign({}, Helper.getDefaulTextsConfig(), this._texts ?? {}, this._config.texts ?? {});
+        //let texts = Object.assign({}, this._texts ?? {});
         //let texts = Object.assign({}, this._texts, Object.keys(this._config.texts ?? {}).map((key) => ({ [key]: { 'value': this._config.texts[key], 'enabled': true} }) ));
 
         //let texts = Object.assign({}, Object.keys(this._texts).map((key) => ({ [key]: this._texts[key].value})), this._config.texts ?? {} );
@@ -430,9 +438,9 @@ class MyCustomCardEditor extends LitElement {
                 texts[key] = ev.detail.value[key];
             }
         });
+
         this._texts = texts;
-
-
+        this._config['texts'] = Helper.filterOutDefaultConfig(Helper.getDefaulTextsConfig(),texts);
 
 
         //Object.keys(texts).filter((key) => !key.startsWith('show_')).forEach(key => {
@@ -443,11 +451,11 @@ class MyCustomCardEditor extends LitElement {
         //});
 
 
-        this._config['texts'] = Object.fromEntries(
-            Object.entries(texts).filter(
-                ([key, val])=> (!key.startsWith('show_') ? texts['show_'+key] : false )
-            )
-        );
+        //this._config['texts'] = Object.fromEntries(
+        //    Object.entries(texts).filter(
+        //        ([key, val])=> (!key.startsWith('show_') ? texts['show_'+key] : false )
+        //    )
+        //);
         
       
 
@@ -488,14 +496,14 @@ class MyCustomCardEditor extends LitElement {
         }
 
 
-        let configuration = {
-            entity: null,
-            showCondition: true,
-            showTemperature: false,
-            showLowTemperature: false
-        };
-
-        let _config = Object.assign(configuration, this._weather);
+        //let configuration = {
+        //    entity: null,
+        //    showCondition: true,
+        //    showTemperature: false,
+        //    showLowTemperature: false
+        //};
+        //Helper.getDefaultWeatherConfig()
+        let _config = Object.assign({}, Helper.getDefaultWeatherConfig(), this._weather);
 
         Object.keys(ev.detail.value).forEach(key => {
             if (!_config.hasOwnProperty(key) || ((typeof ev.detail.value[key] !== "undefined") && (typeof ev.detail.value[key] !== "null"))) {
@@ -506,10 +514,9 @@ class MyCustomCardEditor extends LitElement {
                 }
             }
         });
-
         this._weather = _config;
-
         if (!_config.hasOwnProperty('entity') || ((typeof ev.detail.value['entity'] !== "undefined") && (typeof ev.detail.value['entity'] !== "null"))) {
+            _config = Helper.filterOutDefaultConfig(Helper.getDefaultWeatherConfig(),_config);
             this._config['weather'] = _config;
         }else{
             const { weather, ...newObject } = this._config;
@@ -555,7 +562,7 @@ class MyCustomCardEditor extends LitElement {
 
 
         
-        let _config = Object.assign({}, this._config);
+        let _config = Object.assign({}, Helper.__getDefaultConfig(), this._config);
 
         Object.keys(ev.detail.value).forEach(key => {
             if (!_config.hasOwnProperty(key) || ((typeof ev.detail.value[key] !== "undefined") && (typeof ev.detail.value[key] !== "null"))) {
@@ -914,15 +921,10 @@ class MyCustomCardEditor extends LitElement {
                     .hass=${this.hass}
                     .data=${this._texts};
                     .schema=${[
-                        {name: "show_noEvents", type: 'boolean'},
                         {name: "noEvents", type: 'string'},
-                        {name: "show_fullDay", type: 'boolean'},
                         {name: "fullDay", type: 'string'},
-                        {name: "show_today", type: 'boolean'},
                         {name: "today", type: 'string'},
-                        {name: "show_tomorrow", type: 'boolean'},
                         {name: "tomorrow", type: 'string'},
-                        {name: "show_yesterday", type: 'boolean'},
                         {name: "yesterday", type: 'string'}
                     ]}
                     .computeLabel=${this._computeTextsLabel}

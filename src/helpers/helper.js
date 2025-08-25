@@ -2,6 +2,8 @@ import { DateTime, Settings as LuxonSettings, Info as LuxonInfo } from 'luxon';
 import i18next, { t as translate } from 'i18next';
 import backend from 'i18next-xhr-backend'; 
 
+
+
 class i18nextHelper{
     static {
         
@@ -602,7 +604,20 @@ export class Helper{
         "#a04a9b",
         "#b3e900"
       ];
-
+    static hexTdoRgba(hex, _a=1) {
+        let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        let res = result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16),
+            a: _a
+        } : null;
+        if ((typeof res !== "undefined") && (typeof res !== "null")) {
+            return "rgba("+res.r+","+res.g+","+res.b+","+res.a+")";
+        }else{
+            return hex;
+        }
+    }
     static getColorByIndex(index) {
         return Helper.Colors[index % Helper.Colors.length];
     }
@@ -773,12 +788,24 @@ export class Helper{
 
    
     static customConfig(string) {
+        /*
         if (!i18next.isInitialized) {
-            const event_icon_options = i18nextHelper.i18next_options();
+            const event_icon_options = i18nextHelper.i18next_options('en');
             i18next.use(backend);
             i18next.init(event_icon_options);
         }
         return i18next.getResource(i18nextHelper.i18next_options().lng , 'config', string, i18nextHelper.i18next_options());
+        */
+        if (!i18next.isInitialized) {
+            
+            const localize_options = i18nextHelper.i18next_options();
+            i18next.use(backend);
+            i18next.init(localize_options);
+        }
+        let res = translate('config:'+string);
+
+        return res;
+        
     }
     static localize(string, lng) {
         if (!i18next.isInitialized) {
@@ -842,6 +869,95 @@ export class Helper{
             [name]: Helper.localize(`${t}`)
         };
     }
+
+    static filterOutDefaultConfig(defaultConfig, config, recursive=false) {
+       	let res = Object.assign({}, {});
+        Object.keys(config).forEach(k => {
+            if (String(config[k].constructor).startsWith("function Object")){
+                if(recursive){
+                    res[k] = Helper.filterOutDefaultConfig(defaultConfig[k], config[k]);
+                }else{
+                    res[k] = config[k];
+                }
+            }else{
+                if(!Object.keys(defaultConfig).includes(k) || ((typeof variable == "boolean") ? (defaultConfig[k].toString() !== config[k].toString()) : (defaultConfig[k] !== config[k]))){
+                    res[k] = config[k];
+                }
+            }
+        });
+        return res;
+    }
+
+    static getDefaultConfig(config) {
+
+        let _config =  Helper.filterOutDefaultConfig(Helper.__getDefaultConfig(),config);
+        if (!_config.hasOwnProperty('type')){
+            _config['type'] = "custom:family-week-planner-card";
+        }
+        if (!_config.hasOwnProperty('locale')){
+            _config['locale'] = "en";
+        }
+
+        return _config;
+    }
+    static getDefaultWeatherConfig() {
+        let _weatherConfig = {
+            entity: null,
+            showCondition: true,
+            showTemperature: false,
+            showLowTemperature: false
+        };
+        return _weatherConfig;
+    }
+    static getDefaulTextsConfig() {
+        let _textsConfig = {
+            fullDay: Helper.localize('texts.fullDay'),
+            noEvents: Helper.localize('texts.noEvents'),
+            today: Helper.localize('texts.today'),
+            tomorrow: Helper.localize('texts.tomorrow'),
+            yesterday: Helper.localize('texts.yesterday'),
+            monday: LuxonInfo.weekdays('long')[0],
+            tuesday: LuxonInfo.weekdays('long')[1],
+            wednesday: LuxonInfo.weekdays('long')[2],
+            thursday: LuxonInfo.weekdays('long')[3],
+            friday: LuxonInfo.weekdays('long')[4],
+            saturday: LuxonInfo.weekdays('long')[5],
+            sunday: LuxonInfo.weekdays('long')[6]
+        };
+        return _textsConfig;
+    }
+    static __getDefaultConfig() {
+
+        let _config = Object.assign({}, {});
+
+        if (!_config.hasOwnProperty('type')){
+            _config['type'] = "custom:family-week-planner-card";
+        }
+        if (!_config.hasOwnProperty('locale')){
+            _config['locale'] = "en";
+        }
+        _config['days'] = DateTime.now().daysInMonth;
+        _config['startingDay'] = 'today';
+        _config['hideWeekend'] = false;
+        _config['noCardBackground'] = false; 
+        _config['updateInterval'] = 60; 
+        _config['locationLink'] = 'https://www.google.com/maps/search/?api=1&query=';
+        _config['compact'] = false; 
+        _config['dateFormat'] = 'cccc d LLLL yyyy'; 
+        _config['timeFormat'] = 'HH:mm';
+        _config['showCalendarProfil'] = true;
+        _config['showLocation'] = false;
+        _config['hidePastEvents'] = false;
+        _config['hideDaysWithoutEvents'] = false;
+
+
+        _config['weather'] = Helper.getDefaultWeatherConfig();
+        //_config['eventBackground'] = config.eventBackground ?? 'var(--card-background-color, inherit)';
+        _config['texts'] = Helper.getDefaulTextsConfig();
+        return _config;
+    }
+
+    /*
     static getDefaultConfig(config) {
 
         let _config = Object.assign({}, config);
@@ -852,6 +968,8 @@ export class Helper{
         if (!_config.hasOwnProperty('locale')){
             _config['locale'] = "en";
         }
+
+
         _config['days'] = config.days ?? 7;
         if (_config['days'] === 'month') {
             _config['days'] = DateTime.now().daysInMonth;
@@ -912,7 +1030,7 @@ export class Helper{
             LuxonSettings.defaultLocale = _config['locale'];
         }
 
-        /*
+        
         _config['texts'] = Object.assign(
             {},
             {
@@ -931,13 +1049,14 @@ export class Helper{
             },
             config.texts ?? {}
         );
-        */
+        
 
         
 
         
         return _config;
     }
+        */
     static lightModeCalendarColors = {
         'AC725E': 'Cocoa',
         'D06B64': 'Flamingo',

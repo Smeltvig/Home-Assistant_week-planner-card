@@ -282,7 +282,6 @@ export class WeekPlannerCard extends LitElement {
         this._editCurrentEventDetails = false;
 
         this._calendars = [];
-
         let i = 0;
         for (let object of this._config.calendars) {
             if (!object.hasOwnProperty('color') || !((typeof object['color'] !== "undefined") && (typeof object['color'] !== "null"))) {
@@ -755,7 +754,7 @@ export class WeekPlannerCard extends LitElement {
                                     html`
                                         ${day.events.map((event) => {
                                             return html`
-                                                <div id="${event.id}" class="event ${event.class}" style="--border-color: ${event.color}; --event-background-color: ${event.color}" @click="${() => { this._handleEventClick(event) }}">
+                                                <div id="${event.id}" class="event ${event.class}" style="--border-color: ${event.color}; --event-background-color: ${Helper.hexTdoRgba(event.color,0.5)};" @click="${() => { this._handleEventClick(event) }}">
                                                     <div class="time">
                                                         ${event.fullDay ?
                                                             html`${this._language.fullDay}` :
@@ -961,13 +960,7 @@ export class WeekPlannerCard extends LitElement {
                 
                     ${this._renderEventDetailsDialogContent()}
                     <div class="calendar">
-                        ${this._currentEventDetails.image ?
-                            html`
-                                <state-badge class="has-image" style="background-image: url(${this._currentEventDetails.image});">
-                                </state-badge>
-                            ` :
-                            html`<ha-icon icon="mdi:calendar-account"></ha-icon>`
-                        }
+                        <ha-icon icon="mdi:calendar-account"></ha-icon>
                         <div class="info">
                         ${this._currentEventDetails.calendar ? html`${this.hass.formatEntityAttributeValue(this.hass.states[this._currentEventDetails.calendar], 'friendly_name')}` :''}
                         </div>
@@ -1346,6 +1339,15 @@ export class WeekPlannerCard extends LitElement {
         if (!this._events.hasOwnProperty(dateKey)) {
             this._events[dateKey] = [];
         }
+
+
+        //calendar.affalddk_damager_3
+        //const genbrug = this.hass.formatEntityAttributeValue(this.hass.states['sensor.affalddk_damager_3_genbrug'], 'name');
+        
+        
+        const affalddk_list = Object.fromEntries(Object.entries(this.hass.states).filter(([key]) => key.includes('sensor.affalddk_damager_3_')));
+        debugger;
+        //let image = 
         this._events[dateKey].push({
             event: event,
             id: event.uid,
